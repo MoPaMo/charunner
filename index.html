@@ -23,10 +23,9 @@
       let playerY = groundLevel;
       let isJumping = false;
       let jumpHeight = 2;
+      let jumpCounter = 0;
       let gravity = 0.5;
       let yVelocity = 0;
-      let jumpsRemaining = 2;
-      let canJump = true;
       const keysPressed = {};
 
       const platforms = [
@@ -35,11 +34,24 @@
         { x: 80, y: groundLevel - 8, width: 20 },
       ];
 
+      // Enemies that throw projectiles
+      const enemies = [
+        {
+          x: 40,
+          y: groundLevel,
+          throwingInterval: 60,
+          projectileDirection: -1,
+          projectileX: null,
+        },
+      ];
+
+      // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
         Array(canvasWidth).fill(" ")
       );
       const gameCanvas = document.getElementById("gameCanvas");
 
+      // Function to draw a tree
       function drawTree(x, y) {
         const tree = ["  ^  ", " ^^^ ", "^^^^^", "  |  ", "  |  "];
         for (let i = 0; i < tree.length; i++) {
@@ -51,6 +63,7 @@
         }
       }
 
+      // Function to draw a cloud
       function drawCloud(x, y) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
         for (let i = 0; i < cloud.length; i++) {
@@ -62,6 +75,7 @@
         }
       }
 
+      // Function to draw platforms
       function drawPlatforms() {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
@@ -72,33 +86,60 @@
         }
       }
 
+      // Function to render the canvas
       function renderCanvas() {
+        // Fill background with empty spaces
         for (let y = 0; y < canvasHeight; y++) {
           for (let x = 0; x < canvasWidth; x++) {
             canvas[y][x] = " ";
           }
         }
 
+        // Draw the ground
         for (let x = 0; x < canvasWidth; x++) {
           canvas[groundLevel + 1][x] = "=";
         }
 
+        // Draw trees
         drawTree(5, groundLevel - 4);
         drawTree(30, groundLevel - 4);
         drawTree(55, groundLevel - 4);
         drawTree(80, groundLevel - 4);
 
+        // Draw clouds
         drawCloud(20, 3);
         drawCloud(50, 5);
         drawCloud(80, 2);
 
+        // Draw platforms
         drawPlatforms();
 
-        canvas[Math.floor(playerY)][playerX] = "@";
+        // Draw enemies
+        for (const enemy of enemies) {
+          if (enemy.x < canvasWidth && enemy.y < canvasHeight) {
+            canvas[enemy.y][enemy.x] = "E";
+          }
+        }
+
+        // Draw projectiles
+        for (const enemy of enemies) {
+          if (enemy.projectileX !== null) {
+            enemy.projectileX += enemy.projectileDirection;
+            if (enemy.projectileX >= 0 && enemy.projectileX < canvasWidth) {
+              canvas[enemy.y][enemy.projectileX] = "-";
+            } else {
+              enemy.projectileX = null;
+            }
+          }
+        }
+
+        // Draw the player
+        canvas[playerY][playerX] = "@";
 
         gameCanvas.textContent = canvas.map((row) => row.join("")).join("\n");
       }
 
+      // Handle keyboard input
       document.addEventListener("keydown", (e) => {
         keysPressed[e.key] = true;
       });
@@ -110,21 +151,21 @@
         }
       });
 
-      function checkPlatformCollision(newY) {
-        const playerBottom = Math.floor(newY) + 1;
+      // Check if the player is touching a platform
+      function onPlatform() {
         for (const platform of platforms) {
           if (
             playerX >= platform.x &&
             playerX < platform.x + platform.width &&
-            playerBottom > platform.y &&
-            playerBottom <= platform.y + 1
+            playerY + 1 === platform.y
           ) {
-            return platform.y;
+            return true;
           }
         }
-        return null;
+        return false;
       }
 
+      // Game loop
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(canvasWidth - 1, playerX + 1);
@@ -132,50 +173,55 @@
           playerX = Math.max(0, playerX - 1);
         }
 
-        if (keysPressed[" "] && jumpsRemaining > 0 && canJump) {
+        if (keysPressed[" "] && !isJumping) {
           isJumping = true;
-          jumpsRemaining--;
           yVelocity = -jumpHeight;
-          canJump = false;
         }
 
         if (isJumping) {
-          const newY = playerY + yVelocity;
-          const platformY = checkPlatformCollision(newY);
+          playerY += yVelocity;
 
-          if (platformY !== null) {
-            playerY = platformY - 1;
-            isJumping = false;
-            jumpsRemaining = 2;
-            yVelocity = 0;
-          } else if (newY >= groundLevel) {
+          // Apply gravity
+          yVelocity += gravity;
+
+          // Check for landing on ground or platform
+          if (playerY >= groundLevel) {
             playerY = groundLevel;
             isJumping = false;
-            jumpsRemaining = 2;
-            yVelocity = 0;
-          } else {
-            playerY = newY;
-            yVelocity += gravity;
+          } else if (onPlatform()) {
+            playerY =
+              platforms.find(
+                (platform) =>
+                  playerX >= platform.x && playerX < platform.x + platform.width
+              ).y - 1;
+            isJumping = false;
           }
-        } else {
-          const newY = playerY + gravity;
-          const platformY = checkPlatformCollision(newY);
-
-          if (platformY !== null) {
-            playerY = platformY - 1;
-          } else if (newY >= groundLevel) {
-            playerY = groundLevel;
+        } else if (playerY < groundLevel) {
+          if (onPlatform()) {
+            playerY =
+              platforms.find(
+                (platform) =>
+                  playerX >= platform.x && playerX < platform.x + platform.width
+              ).y - 1;
           } else {
-            playerY = newY;
-            isJumping = true;
+            playerY = Math.min(groundLevel, playerY + gravity);
+          }
+        }
+
+        // Handle enemy projectiles
+        for (const enemy of enemies) {
+          if (enemy.throwingInterval <= 0) {
+            enemy.projectileX = enemy.x + enemy.projectileDirection;
+            enemy.throwingInterval = 60;
+          } else {
+            enemy.throwingInterval--;
           }
         }
 
         renderCanvas();
-        requestAnimationFrame(gameLoop);
       }
 
-      requestAnimationFrame(gameLoop);
+      setInterval(gameLoop, 1000 / 30);
     </script>
   </body>
 </html>
