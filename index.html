@@ -26,6 +26,7 @@
       let gravity = 0.5;
       let yVelocity = 0;
       let jumpsRemaining = 2;
+      let canJump = true;
       const keysPressed = {};
 
       const platforms = [
@@ -104,6 +105,9 @@
 
       document.addEventListener("keyup", (e) => {
         keysPressed[e.key] = false;
+        if (e.key === " ") {
+          canJump = true;
+        }
       });
 
       function checkPlatformCollision(newY) {
@@ -128,11 +132,11 @@
           playerX = Math.max(0, playerX - 1);
         }
 
-        if (keysPressed[" "] && jumpsRemaining > 0) {
+        if (keysPressed[" "] && jumpsRemaining > 0 && canJump) {
           isJumping = true;
           jumpsRemaining--;
           yVelocity = -jumpHeight;
-          keysPressed[" "] = false; // Prevent continuous jumping
+          canJump = false;
         }
 
         if (isJumping) {
