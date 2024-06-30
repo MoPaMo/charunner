@@ -22,9 +22,10 @@
       let playerX = 10;
       let playerY = groundLevel;
       let isJumping = false;
-      let jumpHeight = 5;
+      let jumpHeight = 2; // Reduced jump height
       let jumpCounter = 0;
-      let gravity = 1;
+      let gravity = 0.5; // Reduced gravity
+      let yVelocity = 0;
 
       // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
@@ -95,18 +96,22 @@
           playerX = Math.max(0, playerX - 1);
         } else if (e.key === " " && !isJumping) {
           isJumping = true;
+          yVelocity = -jumpHeight;
         }
       });
 
       // Game loop
       function gameLoop() {
         if (isJumping) {
-          if (jumpCounter < jumpHeight) {
-            playerY -= 1;
-            jumpCounter += 1;
-          } else {
+          playerY += yVelocity;
+
+          // Apply gravity
+          yVelocity += gravity;
+
+          // Check for landing
+          if (playerY >= groundLevel) {
+            playerY = groundLevel;
             isJumping = false;
-            jumpCounter = 0;
           }
         } else if (playerY < groundLevel) {
           playerY = Math.min(groundLevel, playerY + gravity);
@@ -115,7 +120,7 @@
         renderCanvas();
       }
 
-      setInterval(gameLoop, 100);
+      setInterval(gameLoop, 1000 / 30);
     </script>
   </body>
 </html>
