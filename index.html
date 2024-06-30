@@ -27,6 +27,12 @@
       let gravity = 0.5; // Reduced gravity
       let yVelocity = 0;
 
+      const platforms = [
+        { x: 15, y: groundLevel - 4, width: 10 },
+        { x: 50, y: groundLevel - 6, width: 15 },
+        { x: 80, y: groundLevel - 8, width: 20 },
+      ];
+
       // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
         Array(canvasWidth).fill(" ")
@@ -57,6 +63,17 @@
         }
       }
 
+      // Function to draw platforms
+      function drawPlatforms() {
+        for (const platform of platforms) {
+          for (let x = platform.x; x < platform.x + platform.width; x++) {
+            if (x < canvasWidth && platform.y < canvasHeight) {
+              canvas[platform.y][x] = "=";
+            }
+          }
+        }
+      }
+
       // Function to render the canvas
       function renderCanvas() {
         // Fill background with empty spaces
@@ -82,6 +99,9 @@
         drawCloud(50, 5);
         drawCloud(80, 2);
 
+        // Draw platforms
+        drawPlatforms();
+
         // Draw the player
         canvas[playerY][playerX] = "@";
 
@@ -100,6 +120,20 @@
         }
       });
 
+      // Check if the player is touching a platform
+      function onPlatform() {
+        for (const platform of platforms) {
+          if (
+            playerX >= platform.x &&
+            playerX < platform.x + platform.width &&
+            playerY + 1 === platform.y
+          ) {
+            return true;
+          }
+        }
+        return false;
+      }
+
       // Game loop
       function gameLoop() {
         if (isJumping) {
@@ -108,13 +142,28 @@
           // Apply gravity
           yVelocity += gravity;
 
-          // Check for landing
+          // Check for landing on ground or platform
           if (playerY >= groundLevel) {
             playerY = groundLevel;
             isJumping = false;
+          } else if (onPlatform()) {
+            playerY =
+              platforms.find(
+                (platform) =>
+                  playerX >= platform.x && playerX < platform.x + platform.width
+              ).y - 1;
+            isJumping = false;
           }
         } else if (playerY < groundLevel) {
-          playerY = Math.min(groundLevel, playerY + gravity);
+          if (onPlatform()) {
+            playerY =
+              platforms.find(
+                (platform) =>
+                  playerX >= platform.x && playerX < platform.x + platform.width
+              ).y - 1;
+          } else {
+            playerY = Math.min(groundLevel, playerY + gravity);
+          }
         }
 
         renderCanvas();
