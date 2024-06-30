@@ -19,11 +19,11 @@
       const canvasWidth = 120;
       const canvasHeight = 20;
       const groundLevel = canvasHeight - 2;
-      let playerX = 10;
+      const defaultPlayerX = 10;
+      let playerX = defaultPlayerX;
       let playerY = groundLevel;
       let isJumping = false;
       let jumpHeight = 2;
-      let jumpCounter = 0;
       let gravity = 0.5;
       let yVelocity = 0;
       const keysPressed = {};
@@ -40,6 +40,13 @@
           x: 40,
           y: groundLevel,
           throwingInterval: 60,
+          projectileDirection: -1,
+          projectileX: null,
+        },
+        {
+          x: 60,
+          y: groundLevel,
+          throwingInterval: 70,
           projectileDirection: -1,
           projectileX: null,
         },
@@ -116,14 +123,18 @@
 
         // Draw enemies
         for (const enemy of enemies) {
-          if (enemy.x < canvasWidth && enemy.y < canvasHeight) {
+          if (
+            enemy.x < canvasWidth &&
+            enemy.y < canvasHeight &&
+            !enemy.isStomped
+          ) {
             canvas[enemy.y][enemy.x] = "E";
           }
         }
 
         // Draw projectiles
         for (const enemy of enemies) {
-          if (enemy.projectileX !== null) {
+          if (enemy.projectileX !== null && !enemy.isStomped) {
             enemy.projectileX += enemy.projectileDirection;
             if (enemy.projectileX >= 0 && enemy.projectileX < canvasWidth) {
               canvas[enemy.y][enemy.projectileX] = "-";
@@ -159,6 +170,31 @@
             playerX < platform.x + platform.width &&
             playerY + 1 === platform.y
           ) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Check for collision with projectiles
+      function checkProjectileCollision() {
+        for (const enemy of enemies) {
+          if (enemy.projectileX === playerX && enemy.y === playerY) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Check for stomping on enemies
+      function checkStomp() {
+        for (const enemy of enemies) {
+          if (
+            playerY + 1 === enemy.y &&
+            playerX === enemy.x &&
+            !enemy.isStomped
+          ) {
+            enemy.isStomped = true;
             return true;
           }
         }
@@ -210,12 +246,23 @@
 
         // Handle enemy projectiles
         for (const enemy of enemies) {
-          if (enemy.throwingInterval <= 0) {
+          if (enemy.throwingInterval <= 0 && !enemy.isStomped) {
             enemy.projectileX = enemy.x + enemy.projectileDirection;
             enemy.throwingInterval = 60;
           } else {
             enemy.throwingInterval--;
           }
+        }
+
+        // Check for projectile collision
+        if (checkProjectileCollision()) {
+          playerX = defaultPlayerX;
+          playerY = groundLevel;
+        }
+
+        // Check for stomping on enemies
+        if (checkStomp()) {
+          isJumping = false;
         }
 
         renderCanvas();
