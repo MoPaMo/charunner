@@ -16,10 +16,10 @@
   <body>
     <div id="gameCanvas"></div>
     <script>
-      const gameWorldWidth = 200; // Total width of the game world
-      const gameWorldHeight = 20; // Height remains the same
-      const canvasWidth = 80; // Width of the viewport (camera width)
-      const canvasHeight = 20; // Viewport height
+      const gameWorldWidth = 300; // Increased total width of the game world
+      const gameWorldHeight = 20;
+      const canvasWidth = 80;
+      const canvasHeight = 20;
       const groundLevel = canvasHeight - 2;
       const defaultPlayerX = 10;
       let playerX = defaultPlayerX;
@@ -30,38 +30,28 @@
       let yVelocity = 0;
       const keysPressed = {};
 
-      let cameraX = 0; // Camera starting position
+      let cameraX = 0;
 
       const platforms = [
         { x: 15, y: groundLevel - 4, width: 10 },
         { x: 50, y: groundLevel - 6, width: 15 },
         { x: 80, y: groundLevel - 8, width: 20 },
+        { x: 120, y: groundLevel - 5, width: 12 },
+        { x: 150, y: groundLevel - 7, width: 18 },
+        { x: 190, y: groundLevel - 9, width: 25 },
+        { x: 240, y: groundLevel - 6, width: 15 },
       ];
 
-      // Enemies that throw projectiles
       const enemies = [
-        {
-          x: 40,
-          y: groundLevel,
-          throwingInterval: 60,
-          projectileDirection: -1,
-          projectileX: null,
-          isCollided: false,
-        },
-        {
-          x: 60,
-          y: groundLevel,
-          throwingInterval: 70,
-          projectileDirection: -1,
-          projectileX: null,
-          isCollided: false,
-        },
+        { x: 40, y: groundLevel, throwingInterval: 60, projectileDirection: -1, projectileX: null, isCollided: false },
+        { x: 60, y: groundLevel, throwingInterval: 70, projectileDirection: -1, projectileX: null, isCollided: false },
+        { x: 90, y: groundLevel - 8, throwingInterval: 80, projectileDirection: -1, projectileX: null, isCollided: false },
+        { x: 160, y: groundLevel - 7, throwingInterval: 65, projectileDirection: -1, projectileX: null, isCollided: false },
+        { x: 210, y: groundLevel - 9, throwingInterval: 75, projectileDirection: -1, projectileX: null, isCollided: false },
       ];
 
-      // List of particles for effects
       const particles = [];
 
-      // Particle effect class
       class Particle {
         constructor(x, y) {
           this.x = x;
@@ -90,13 +80,11 @@
         }
       }
 
-      // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
         Array(canvasWidth).fill(" ")
       );
       const gameCanvas = document.getElementById("gameCanvas");
 
-      // Function to draw a tree
       function drawTree(x, y, cameraX) {
         const tree = ["  ^  ", " ^^^ ", "^^^^^", "  |  ", "  |  "];
         for (let i = 0; i < tree.length; i++) {
@@ -112,7 +100,6 @@
         }
       }
 
-      // Function to draw a cloud
       function drawCloud(x, y, cameraX) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
         for (let i = 0; i < cloud.length; i++) {
@@ -128,7 +115,6 @@
         }
       }
 
-      // Function to draw platforms
       function drawPlatforms(cameraX) {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
@@ -143,35 +129,38 @@
         }
       }
 
-      // Function to render the canvas
       function renderCanvas(cameraX) {
-        // Fill background with empty spaces
         for (let y = 0; y < canvasHeight; y++) {
           for (let x = 0; x < canvasWidth; x++) {
             canvas[y][x] = " ";
           }
         }
 
-        // Draw the ground
         for (let x = 0; x < canvasWidth; x++) {
           canvas[groundLevel + 1][x] = "=";
         }
 
-        // Draw trees
         drawTree(5, groundLevel - 4, cameraX);
         drawTree(30, groundLevel - 4, cameraX);
         drawTree(55, groundLevel - 4, cameraX);
         drawTree(80, groundLevel - 4, cameraX);
+        drawTree(110, groundLevel - 4, cameraX);
+        drawTree(140, groundLevel - 4, cameraX);
+        drawTree(170, groundLevel - 4, cameraX);
+        drawTree(200, groundLevel - 4, cameraX);
+        drawTree(230, groundLevel - 4, cameraX);
+        drawTree(260, groundLevel - 4, cameraX);
 
-        // Draw clouds
         drawCloud(20, 3, cameraX);
         drawCloud(50, 5, cameraX);
         drawCloud(80, 2, cameraX);
+        drawCloud(120, 4, cameraX);
+        drawCloud(160, 3, cameraX);
+        drawCloud(200, 5, cameraX);
+        drawCloud(240, 2, cameraX);
 
-        // Draw platforms
         drawPlatforms(cameraX);
 
-        // Draw enemies
         for (const enemy of enemies) {
           if (
             enemy.x >= cameraX &&
@@ -183,7 +172,6 @@
           }
         }
 
-        // Draw projectiles
         for (const enemy of enemies) {
           if (enemy.projectileX !== null && !enemy.isCollided) {
             enemy.projectileX += enemy.projectileDirection;
@@ -198,19 +186,15 @@
           }
         }
 
-        // Draw particles
         for (const particle of particles) {
           particle.render(cameraX, canvas);
         }
 
-        // Draw the player
         canvas[playerY][playerX - cameraX] = "@";
 
-        // Render the canvas to the DOM
         gameCanvas.textContent = canvas.map((row) => row.join("")).join("\n");
       }
 
-      // Handle keyboard input
       document.addEventListener("keydown", (e) => {
         keysPressed[e.key] = true;
       });
@@ -222,7 +206,6 @@
         }
       });
 
-      // Check if the player is touching a platform
       function onPlatform() {
         for (const platform of platforms) {
           if (
@@ -236,7 +219,6 @@
         return false;
       }
 
-      // Check for collision with projectiles
       function checkProjectileCollision() {
         for (const enemy of enemies) {
           if (enemy.projectileX === playerX && enemy.y === playerY) {
@@ -246,7 +228,6 @@
         return false;
       }
 
-      // Check for collision with enemies
       function checkEnemyCollision() {
         for (const enemy of enemies) {
           if (playerY === enemy.y && playerX === enemy.x && !enemy.isCollided) {
@@ -258,14 +239,12 @@
         return false;
       }
 
-      // Create particle effect
       function createParticleEffect(x, y) {
         for (let i = 0; i < 12; i++) {
           particles.push(new Particle(x, y));
         }
       }
 
-      // Update camera position based on player position
       function updateCamera() {
         if (playerX - cameraX > canvasWidth / 2) {
           cameraX = playerX - canvasWidth / 2;
@@ -275,7 +254,6 @@
         cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
       }
 
-      // Game loop
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(gameWorldWidth - 1, playerX + 1);
@@ -290,11 +268,8 @@
 
         if (isJumping) {
           playerY += yVelocity;
-
-          // Apply gravity
           yVelocity += gravity;
 
-          // Check for landing on ground or platform
           if (playerY >= groundLevel) {
             playerY = groundLevel;
             isJumping = false;
@@ -318,7 +293,6 @@
           }
         }
 
-        // Handle enemy projectiles
         for (const enemy of enemies) {
           if (enemy.throwingInterval <= 0 && !enemy.isCollided) {
             enemy.projectileX = enemy.x + enemy.projectileDirection;
@@ -328,7 +302,6 @@
           }
         }
 
-        // Update particles and remove expired ones
         for (let i = particles.length - 1; i >= 0; i--) {
           if (particles[i].lifetime <= 0) {
             particles.splice(i, 1);
@@ -337,21 +310,16 @@
           }
         }
 
-        // Check for projectile collision
         if (checkProjectileCollision()) {
           playerX = defaultPlayerX;
           playerY = groundLevel;
         }
 
-        // Check for collision with enemies
         if (checkEnemyCollision()) {
           isJumping = false;
         }
 
-        // Update the camera position
         updateCamera();
-
-        // Render the canvas based on the camera position
         renderCanvas(cameraX);
       }
 
