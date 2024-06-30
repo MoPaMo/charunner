@@ -42,6 +42,7 @@
           throwingInterval: 60,
           projectileDirection: -1,
           projectileX: null,
+          isCollided: false,
         },
         {
           x: 60,
@@ -49,8 +50,41 @@
           throwingInterval: 70,
           projectileDirection: -1,
           projectileX: null,
+          isCollided: false,
         },
       ];
+
+      // List of particles for effects
+      const particles = [];
+
+      // Particle effect class
+      class Particle {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.xVelocity = (Math.random() - 0.5) * 2;
+          this.yVelocity = Math.random() - 1;
+          this.lifetime = 20;
+        }
+
+        update() {
+          this.x += this.xVelocity;
+          this.y += this.yVelocity;
+          this.lifetime--;
+        }
+
+        render(canvas) {
+          if (
+            this.lifetime > 0 &&
+            this.x >= 0 &&
+            this.x < canvasWidth &&
+            this.y >= 0 &&
+            this.y < canvasHeight
+          ) {
+            canvas[Math.floor(this.y)][Math.floor(this.x)] = ".";
+          }
+        }
+      }
 
       // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
@@ -144,6 +178,11 @@
           }
         }
 
+        // Draw particles
+        for (const particle of particles) {
+          particle.render(canvas);
+        }
+
         // Draw the player
         canvas[playerY][playerX] = "@";
 
@@ -191,10 +230,18 @@
         for (const enemy of enemies) {
           if (playerY === enemy.y && playerX === enemy.x && !enemy.isCollided) {
             enemy.isCollided = true;
+            createParticleEffect(enemy.x, enemy.y);
             return true;
           }
         }
         return false;
+      }
+
+      // Create particle effect
+      function createParticleEffect(x, y) {
+        for (let i = 0; i < 12; i++) {
+          particles.push(new Particle(x, y));
+        }
       }
 
       // Game loop
@@ -247,6 +294,15 @@
             enemy.throwingInterval = 60;
           } else {
             enemy.throwingInterval--;
+          }
+        }
+
+        // Update particles and remove expired ones
+        for (let i = particles.length - 1; i >= 0; i--) {
+          if (particles[i].lifetime <= 0) {
+            particles.splice(i, 1);
+          } else {
+            particles[i].update();
           }
         }
 
