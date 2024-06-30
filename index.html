@@ -22,10 +22,10 @@
       let playerX = 10;
       let playerY = groundLevel;
       let isJumping = false;
-      let jumpHeight = 2; // Reduced jump height
-      let jumpCounter = 0;
-      let gravity = 0.5; // Reduced gravity
+      let jumpHeight = 2;
+      let gravity = 0.5;
       let yVelocity = 0;
+      let jumpsRemaining = 2;
       const keysPressed = {};
 
       const platforms = [
@@ -34,13 +34,11 @@
         { x: 80, y: groundLevel - 8, width: 20 },
       ];
 
-      // Create the initial canvas
       const canvas = Array.from({ length: canvasHeight }, () =>
         Array(canvasWidth).fill(" ")
       );
       const gameCanvas = document.getElementById("gameCanvas");
 
-      // Function to draw a tree
       function drawTree(x, y) {
         const tree = ["  ^  ", " ^^^ ", "^^^^^", "  |  ", "  |  "];
         for (let i = 0; i < tree.length; i++) {
@@ -52,7 +50,6 @@
         }
       }
 
-      // Function to draw a cloud
       function drawCloud(x, y) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
         for (let i = 0; i < cloud.length; i++) {
@@ -64,7 +61,6 @@
         }
       }
 
-      // Function to draw platforms
       function drawPlatforms() {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
@@ -75,41 +71,33 @@
         }
       }
 
-      // Function to render the canvas
       function renderCanvas() {
-        // Fill background with empty spaces
         for (let y = 0; y < canvasHeight; y++) {
           for (let x = 0; x < canvasWidth; x++) {
             canvas[y][x] = " ";
           }
         }
 
-        // Draw the ground
         for (let x = 0; x < canvasWidth; x++) {
           canvas[groundLevel + 1][x] = "=";
         }
 
-        // Draw trees
         drawTree(5, groundLevel - 4);
         drawTree(30, groundLevel - 4);
         drawTree(55, groundLevel - 4);
         drawTree(80, groundLevel - 4);
 
-        // Draw clouds
         drawCloud(20, 3);
         drawCloud(50, 5);
         drawCloud(80, 2);
 
-        // Draw platforms
         drawPlatforms();
 
-        // Draw the player
-        canvas[playerY][playerX] = "@";
+        canvas[Math.floor(playerY)][playerX] = "@";
 
         gameCanvas.textContent = canvas.map((row) => row.join("")).join("\n");
       }
 
-      // Handle keyboard input
       document.addEventListener("keydown", (e) => {
         keysPressed[e.key] = true;
       });
@@ -118,21 +106,21 @@
         keysPressed[e.key] = false;
       });
 
-      // Check if the player is touching a platform
-      function onPlatform() {
+      function checkPlatformCollision(newY) {
+        const playerBottom = Math.floor(newY) + 1;
         for (const platform of platforms) {
           if (
             playerX >= platform.x &&
             playerX < platform.x + platform.width &&
-            playerY + 1 === platform.y
+            playerBottom > platform.y &&
+            playerBottom <= platform.y + 1
           ) {
-            return true;
+            return platform.y;
           }
         }
-        return false;
+        return null;
       }
 
-      // Game loop
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(canvasWidth - 1, playerX + 1);
@@ -140,45 +128,50 @@
           playerX = Math.max(0, playerX - 1);
         }
 
-        if (keysPressed[" "] && !isJumping) {
+        if (keysPressed[" "] && jumpsRemaining > 0) {
           isJumping = true;
+          jumpsRemaining--;
           yVelocity = -jumpHeight;
+          keysPressed[" "] = false; // Prevent continuous jumping
         }
 
         if (isJumping) {
-          playerY += yVelocity;
+          const newY = playerY + yVelocity;
+          const platformY = checkPlatformCollision(newY);
 
-          // Apply gravity
-          yVelocity += gravity;
-
-          // Check for landing on ground or platform
-          if (playerY >= groundLevel) {
+          if (platformY !== null) {
+            playerY = platformY - 1;
+            isJumping = false;
+            jumpsRemaining = 2;
+            yVelocity = 0;
+          } else if (newY >= groundLevel) {
             playerY = groundLevel;
             isJumping = false;
-          } else if (onPlatform()) {
-            playerY =
-              platforms.find(
-                (platform) =>
-                  playerX >= platform.x && playerX < platform.x + platform.width
-              ).y - 1;
-            isJumping = false;
-          }
-        } else if (playerY < groundLevel) {
-          if (onPlatform()) {
-            playerY =
-              platforms.find(
-                (platform) =>
-                  playerX >= platform.x && playerX < platform.x + platform.width
-              ).y - 1;
+            jumpsRemaining = 2;
+            yVelocity = 0;
           } else {
-            playerY = Math.min(groundLevel, playerY + gravity);
+            playerY = newY;
+            yVelocity += gravity;
+          }
+        } else {
+          const newY = playerY + gravity;
+          const platformY = checkPlatformCollision(newY);
+
+          if (platformY !== null) {
+            playerY = platformY - 1;
+          } else if (newY >= groundLevel) {
+            playerY = groundLevel;
+          } else {
+            playerY = newY;
+            isJumping = true;
           }
         }
 
         renderCanvas();
+        requestAnimationFrame(gameLoop);
       }
 
-      setInterval(gameLoop, 1000 / 30);
+      requestAnimationFrame(gameLoop);
     </script>
   </body>
 </html>
