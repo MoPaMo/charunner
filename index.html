@@ -16,8 +16,10 @@
   <body>
     <div id="gameCanvas"></div>
     <script>
-      const canvasWidth = 120;
-      const canvasHeight = 20;
+      const gameWorldWidth = 200; // Total width of the game world
+      const gameWorldHeight = 20; // Height remains the same
+      const canvasWidth = 80; // Width of the viewport (camera width)
+      const canvasHeight = 20; // Viewport height
       const groundLevel = canvasHeight - 2;
       const defaultPlayerX = 10;
       let playerX = defaultPlayerX;
@@ -27,6 +29,8 @@
       let gravity = 0.5;
       let yVelocity = 0;
       const keysPressed = {};
+
+      let cameraX = 0; // Camera starting position
 
       const platforms = [
         { x: 15, y: groundLevel - 4, width: 10 },
@@ -73,15 +77,15 @@
           this.lifetime--;
         }
 
-        render(canvas) {
+        render(cameraX, canvas) {
           if (
             this.lifetime > 0 &&
-            this.x >= 0 &&
-            this.x < canvasWidth &&
+            this.x >= cameraX &&
+            this.x < cameraX + canvasWidth &&
             this.y >= 0 &&
             this.y < canvasHeight
           ) {
-            canvas[Math.floor(this.y)][Math.floor(this.x)] = ".";
+            canvas[Math.floor(this.y)][Math.floor(this.x - cameraX)] = ".";
           }
         }
       }
@@ -93,42 +97,54 @@
       const gameCanvas = document.getElementById("gameCanvas");
 
       // Function to draw a tree
-      function drawTree(x, y) {
+      function drawTree(x, y, cameraX) {
         const tree = ["  ^  ", " ^^^ ", "^^^^^", "  |  ", "  |  "];
         for (let i = 0; i < tree.length; i++) {
           for (let j = 0; j < tree[i].length; j++) {
-            if (x + j < canvasWidth && y + i < canvasHeight) {
-              canvas[y + i][x + j] = tree[i][j];
+            if (
+              x + j >= cameraX &&
+              x + j < cameraX + canvasWidth &&
+              y + i < canvasHeight
+            ) {
+              canvas[y + i][x + j - cameraX] = tree[i][j];
             }
           }
         }
       }
 
       // Function to draw a cloud
-      function drawCloud(x, y) {
+      function drawCloud(x, y, cameraX) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
         for (let i = 0; i < cloud.length; i++) {
           for (let j = 0; j < cloud[i].length; j++) {
-            if (x + j < canvasWidth && y + i < canvasHeight) {
-              canvas[y + i][x + j] = cloud[i][j];
+            if (
+              x + j >= cameraX &&
+              x + j < cameraX + canvasWidth &&
+              y + i < canvasHeight
+            ) {
+              canvas[y + i][x + j - cameraX] = cloud[i][j];
             }
           }
         }
       }
 
       // Function to draw platforms
-      function drawPlatforms() {
+      function drawPlatforms(cameraX) {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
-            if (x < canvasWidth && platform.y < canvasHeight) {
-              canvas[platform.y][x] = "=";
+            if (
+              x >= cameraX &&
+              x < cameraX + canvasWidth &&
+              platform.y < canvasHeight
+            ) {
+              canvas[platform.y][x - cameraX] = "=";
             }
           }
         }
       }
 
       // Function to render the canvas
-      function renderCanvas() {
+      function renderCanvas(cameraX) {
         // Fill background with empty spaces
         for (let y = 0; y < canvasHeight; y++) {
           for (let x = 0; x < canvasWidth; x++) {
@@ -142,27 +158,28 @@
         }
 
         // Draw trees
-        drawTree(5, groundLevel - 4);
-        drawTree(30, groundLevel - 4);
-        drawTree(55, groundLevel - 4);
-        drawTree(80, groundLevel - 4);
+        drawTree(5, groundLevel - 4, cameraX);
+        drawTree(30, groundLevel - 4, cameraX);
+        drawTree(55, groundLevel - 4, cameraX);
+        drawTree(80, groundLevel - 4, cameraX);
 
         // Draw clouds
-        drawCloud(20, 3);
-        drawCloud(50, 5);
-        drawCloud(80, 2);
+        drawCloud(20, 3, cameraX);
+        drawCloud(50, 5, cameraX);
+        drawCloud(80, 2, cameraX);
 
         // Draw platforms
-        drawPlatforms();
+        drawPlatforms(cameraX);
 
         // Draw enemies
         for (const enemy of enemies) {
           if (
-            enemy.x < canvasWidth &&
+            enemy.x >= cameraX &&
+            enemy.x < cameraX + canvasWidth &&
             enemy.y < canvasHeight &&
             !enemy.isCollided
           ) {
-            canvas[enemy.y][enemy.x] = "E";
+            canvas[enemy.y][enemy.x - cameraX] = "E";
           }
         }
 
@@ -170,8 +187,11 @@
         for (const enemy of enemies) {
           if (enemy.projectileX !== null && !enemy.isCollided) {
             enemy.projectileX += enemy.projectileDirection;
-            if (enemy.projectileX >= 0 && enemy.projectileX < canvasWidth) {
-              canvas[enemy.y][enemy.projectileX] = "-";
+            if (
+              enemy.projectileX >= cameraX &&
+              enemy.projectileX < cameraX + canvasWidth
+            ) {
+              canvas[enemy.y][enemy.projectileX - cameraX] = "-";
             } else {
               enemy.projectileX = null;
             }
@@ -180,12 +200,13 @@
 
         // Draw particles
         for (const particle of particles) {
-          particle.render(canvas);
+          particle.render(cameraX, canvas);
         }
 
         // Draw the player
-        canvas[playerY][playerX] = "@";
+        canvas[playerY][playerX - cameraX] = "@";
 
+        // Render the canvas to the DOM
         gameCanvas.textContent = canvas.map((row) => row.join("")).join("\n");
       }
 
@@ -244,10 +265,20 @@
         }
       }
 
+      // Update camera position based on player position
+      function updateCamera() {
+        if (playerX - cameraX > canvasWidth / 2) {
+          cameraX = playerX - canvasWidth / 2;
+        } else if (playerX - cameraX < canvasWidth / 4) {
+          cameraX = Math.max(0, playerX - canvasWidth / 4);
+        }
+        cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
+      }
+
       // Game loop
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
-          playerX = Math.min(canvasWidth - 1, playerX + 1);
+          playerX = Math.min(gameWorldWidth - 1, playerX + 1);
         } else if (keysPressed["ArrowLeft"]) {
           playerX = Math.max(0, playerX - 1);
         }
@@ -317,7 +348,11 @@
           isJumping = false;
         }
 
-        renderCanvas();
+        // Update the camera position
+        updateCamera();
+
+        // Render the canvas based on the camera position
+        renderCanvas(cameraX);
       }
 
       setInterval(gameLoop, 1000 / 30);
