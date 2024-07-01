@@ -29,7 +29,13 @@
       let gravity = 0.5;
       let yVelocity = 0;
       const keysPressed = {};
-
+      let gameRunning = true;
+      let ascii = `.__..._____.._..._..__........_____.._..._._.<br/>
+.\.\././._.\|.|.|.|.\.\.....././._.\|.\.|.|.|<br/>
+..\.V./.|.|.|.|.|.|..\.\./\././.|.|.|..\|.|.|<br/>
+...|.||.|_|.|.|_|.|...\.V..V./|.|_|.|.|\..|_|<br/>
+...|_|.\___/.\___/.....\_/\_/..\___/|_|.\_(_)<br/>
+.............................................`;
       let cameraX = 0;
 
       // Add finish line position
@@ -313,83 +319,92 @@
       // Add function to check if player has reached the finish line
       function checkFinishLine() {
         if (playerX >= finishLineX) {
+          gameRunning = false;
           alert("Congratulations! You've reached the finish line!");
           playerX = defaultPlayerX;
           playerY = groundLevel;
+
+          //replace canvas with ascii art
+          document.getElementById("gameCanvas").innerHTML = ascii;
         }
       }
 
       function gameLoop() {
-        if (keysPressed["ArrowRight"]) {
-          playerX = Math.min(gameWorldWidth - 1, playerX + 1);
-        } else if (keysPressed["ArrowLeft"]) {
-          playerX = Math.max(0, playerX - 1);
-        }
+        if (gameRunning) {
+          if (keysPressed["ArrowRight"]) {
+            playerX = Math.min(gameWorldWidth - 1, playerX + 1);
+          } else if (keysPressed["ArrowLeft"]) {
+            playerX = Math.max(0, playerX - 1);
+          }
 
-        if (keysPressed[" "] && !isJumping) {
-          isJumping = true;
-          yVelocity = -jumpHeight;
-        }
+          if (keysPressed[" "] && !isJumping) {
+            isJumping = true;
+            yVelocity = -jumpHeight;
+          }
 
-        if (isJumping) {
-          playerY += yVelocity;
-          yVelocity += gravity;
+          if (isJumping) {
+            playerY += yVelocity;
+            yVelocity += gravity;
 
-          if (playerY >= groundLevel) {
+            if (playerY >= groundLevel) {
+              playerY = groundLevel;
+              isJumping = false;
+            } else if (onPlatform()) {
+              playerY =
+                platforms.find(
+                  (platform) =>
+                    playerX >= platform.x &&
+                    playerX < platform.x + platform.width
+                ).y - 1;
+              isJumping = false;
+            }
+          } else if (playerY < groundLevel) {
+            if (onPlatform()) {
+              playerY =
+                platforms.find(
+                  (platform) =>
+                    playerX >= platform.x &&
+                    playerX < platform.x + platform.width
+                ).y - 1;
+            } else {
+              playerY = Math.min(groundLevel, playerY + gravity);
+            }
+          }
+
+          for (const enemy of enemies) {
+            if (enemy.throwingInterval <= 0 && !enemy.isCollided) {
+              enemy.projectileX = enemy.x + enemy.projectileDirection;
+              enemy.throwingInterval = 60;
+            } else {
+              enemy.throwingInterval--;
+            }
+          }
+
+          for (let i = particles.length - 1; i >= 0; i--) {
+            if (particles[i].lifetime <= 0) {
+              particles.splice(i, 1);
+            } else {
+              particles[i].update();
+            }
+          }
+
+          if (checkProjectileCollision()) {
+            playerX = defaultPlayerX;
             playerY = groundLevel;
-            isJumping = false;
-          } else if (onPlatform()) {
-            playerY =
-              platforms.find(
-                (platform) =>
-                  playerX >= platform.x && playerX < platform.x + platform.width
-              ).y - 1;
+          }
+
+          if (checkEnemyCollision()) {
             isJumping = false;
           }
-        } else if (playerY < groundLevel) {
-          if (onPlatform()) {
-            playerY =
-              platforms.find(
-                (platform) =>
-                  playerX >= platform.x && playerX < platform.x + platform.width
-              ).y - 1;
-          } else {
-            playerY = Math.min(groundLevel, playerY + gravity);
-          }
+
+          checkFinishLine(); // Add this line to check if player has reached the finish line
+
+          updateCamera();
+          renderCanvas(cameraX);
+        } else {
+          document.getElementById("gameCanvas").innerHTML = ascii;
         }
-
-        for (const enemy of enemies) {
-          if (enemy.throwingInterval <= 0 && !enemy.isCollided) {
-            enemy.projectileX = enemy.x + enemy.projectileDirection;
-            enemy.throwingInterval = 60;
-          } else {
-            enemy.throwingInterval--;
-          }
-        }
-
-        for (let i = particles.length - 1; i >= 0; i--) {
-          if (particles[i].lifetime <= 0) {
-            particles.splice(i, 1);
-          } else {
-            particles[i].update();
-          }
-        }
-
-        if (checkProjectileCollision()) {
-          playerX = defaultPlayerX;
-          playerY = groundLevel;
-        }
-
-        if (checkEnemyCollision()) {
-          isJumping = false;
-        }
-
-        checkFinishLine(); // Add this line to check if player has reached the finish line
-
-        updateCamera();
-        renderCanvas(cameraX);
       }
-
       setInterval(gameLoop, 1000 / 30);
     </script>
   </body>
