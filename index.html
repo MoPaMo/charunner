@@ -16,7 +16,7 @@
   <body>
     <div id="gameCanvas"></div>
     <script>
-      const gameWorldWidth = 300; // Increased total width of the game world
+      const gameWorldWidth = 300;
       const gameWorldHeight = 20;
       const canvasWidth = 80;
       const canvasHeight = 20;
@@ -48,6 +48,16 @@
         { x: 90, y: groundLevel - 8, throwingInterval: 80, projectileDirection: -1, projectileX: null, isCollided: false },
         { x: 160, y: groundLevel - 7, throwingInterval: 65, projectileDirection: -1, projectileX: null, isCollided: false },
         { x: 210, y: groundLevel - 9, throwingInterval: 75, projectileDirection: -1, projectileX: null, isCollided: false },
+      ];
+
+      const clouds = [
+        { x: 20, y: 3 },
+        { x: 50, y: 5 },
+        { x: 80, y: 2 },
+        { x: 120, y: 4 },
+        { x: 160, y: 3 },
+        { x: 200, y: 5 },
+        { x: 240, y: 2 },
       ];
 
       const particles = [];
@@ -100,16 +110,16 @@
         }
       }
 
-      function drawCloud(x, y, cameraX) {
+      function drawCloud(cloudX, y, cameraX) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
+        const parallaxFactor = 0.5;
+        const adjustedX = Math.floor(cloudX - cameraX * parallaxFactor);
+
         for (let i = 0; i < cloud.length; i++) {
           for (let j = 0; j < cloud[i].length; j++) {
-            if (
-              x + j >= cameraX &&
-              x + j < cameraX + canvasWidth &&
-              y + i < canvasHeight
-            ) {
-              canvas[y + i][x + j - cameraX] = cloud[i][j];
+            const x = adjustedX + j;
+            if (x >= 0 && x < canvasWidth && y + i < canvasHeight) {
+              canvas[y + i][x] = cloud[i][j];
             }
           }
         }
@@ -151,13 +161,9 @@
         drawTree(230, groundLevel - 4, cameraX);
         drawTree(260, groundLevel - 4, cameraX);
 
-        drawCloud(20, 3, cameraX);
-        drawCloud(50, 5, cameraX);
-        drawCloud(80, 2, cameraX);
-        drawCloud(120, 4, cameraX);
-        drawCloud(160, 3, cameraX);
-        drawCloud(200, 5, cameraX);
-        drawCloud(240, 2, cameraX);
+        for (const cloud of clouds) {
+          drawCloud(cloud.x, cloud.y, cameraX);
+        }
 
         drawPlatforms(cameraX);
 
@@ -254,6 +260,16 @@
         cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
       }
 
+      function updateClouds() {
+        const cloudSpeed = 0.2;
+        for (let cloud of clouds) {
+          cloud.x -= cloudSpeed;
+          if (cloud.x + 8 < 0) {
+            cloud.x = gameWorldWidth;
+          }
+        }
+      }
+
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(gameWorldWidth - 1, playerX + 1);
@@ -319,6 +335,7 @@
           isJumping = false;
         }
 
+        updateClouds();
         updateCamera();
         renderCanvas(cameraX);
       }
