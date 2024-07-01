@@ -104,6 +104,17 @@
         { x: 240, y: 2 },
       ];
 
+      // Add mountains
+      const mountains = [
+        { x: 10, height: 5 },
+        { x: 40, height: 7 },
+        { x: 80, height: 6 },
+        { x: 120, height: 8 },
+        { x: 160, height: 5 },
+        { x: 200, height: 7 },
+        { x: 240, height: 6 },
+      ];
+
       const particles = [];
 
       class Particle {
@@ -171,6 +182,27 @@
           }
         }
       }
+
+      // Add function to draw mountains
+      function drawMountains(cameraX) {
+        const parallaxFactor = 0.5; // Adjust this value to change the parallax effect
+
+        for (const mountain of mountains) {
+          const adjustedX = Math.floor(mountain.x - cameraX * parallaxFactor);
+
+          for (let y = 0; y < mountain.height; y++) {
+            const width = (mountain.height - y) * 2 - 1;
+            const startX = adjustedX - Math.floor(width / 2);
+
+            for (let x = startX; x < startX + width; x++) {
+              if (x >= 0 && x < canvasWidth && groundLevel - y >= 0) {
+                canvas[groundLevel - y][x] = "´`".charAt((x + y) % 2);
+              }
+            }
+          }
+        }
+      }
+
       function drawPlatforms(cameraX) {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
@@ -185,7 +217,6 @@
         }
       }
 
-      // Add function to draw finish line
       function drawFinishLine(cameraX) {
         if (finishLineX >= cameraX && finishLineX < cameraX + canvasWidth) {
           for (let y = 0; y < canvasHeight; y++) {
@@ -200,6 +231,8 @@
             canvas[y][x] = " ";
           }
         }
+
+        drawMountains(cameraX); // Add this line to draw the mountains
 
         for (let x = 0; x < canvasWidth; x++) {
           canvas[groundLevel + 1][x] = "=";
@@ -221,7 +254,7 @@
         }
 
         drawPlatforms(cameraX);
-        drawFinishLine(cameraX); // Add this line to draw the finish line
+        drawFinishLine(cameraX);
 
         for (const enemy of enemies) {
           if (
@@ -316,7 +349,6 @@
         cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
       }
 
-      // Add function to check if player has reached the finish line
       function checkFinishLine() {
         if (playerX >= finishLineX) {
           gameRunning = false;
@@ -324,7 +356,6 @@
           playerX = defaultPlayerX;
           playerY = groundLevel;
 
-          //replace canvas with ascii art
           document.getElementById("gameCanvas").innerHTML = ascii;
         }
       }
@@ -397,7 +428,7 @@
             isJumping = false;
           }
 
-          checkFinishLine(); // Add this line to check if player has reached the finish line
+          checkFinishLine();
 
           updateCamera();
           renderCanvas(cameraX);
