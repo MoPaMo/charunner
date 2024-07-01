@@ -59,6 +59,7 @@
           projectileDirection: -1,
           projectileX: null,
           isCollided: false,
+          type: "E",
         },
         {
           x: 60,
@@ -67,6 +68,7 @@
           projectileDirection: -1,
           projectileX: null,
           isCollided: false,
+          type: "E",
         },
         {
           x: 90,
@@ -75,6 +77,7 @@
           projectileDirection: -1,
           projectileX: null,
           isCollided: false,
+          type: "E",
         },
         {
           x: 160,
@@ -83,6 +86,7 @@
           projectileDirection: -1,
           projectileX: null,
           isCollided: false,
+          type: "E",
         },
         {
           x: 210,
@@ -91,9 +95,28 @@
           projectileDirection: -1,
           projectileX: null,
           isCollided: false,
+          type: "E",
+        },
+        // Add new 'M' type enemies
+        {
+          x: 100,
+          y: groundLevel,
+          isCollided: false,
+          type: "M",
+        },
+        {
+          x: 180,
+          y: groundLevel - 7,
+          isCollided: false,
+          type: "M",
+        },
+        {
+          x: 250,
+          y: groundLevel,
+          isCollided: false,
+          type: "M",
         },
       ];
-
       const clouds = [
         { x: 20, y: 3 },
         { x: 50, y: 5 },
@@ -263,7 +286,7 @@
             enemy.y < canvasHeight &&
             !enemy.isCollided
           ) {
-            canvas[enemy.y][enemy.x - cameraX] = "E";
+            canvas[enemy.y][enemy.x - cameraX] = enemy.type; // Use the enemy type for rendering
           }
         }
 
@@ -328,6 +351,11 @@
           if (playerY === enemy.y && playerX === enemy.x && !enemy.isCollided) {
             enemy.isCollided = true;
             createParticleEffect(enemy.x, enemy.y);
+            if (enemy.type === "M") {
+              // Reset player position when colliding with 'M' type enemy
+              playerX = defaultPlayerX;
+              playerY = groundLevel;
+            }
             return true;
           }
         }
@@ -403,11 +431,13 @@
           }
 
           for (const enemy of enemies) {
-            if (enemy.throwingInterval <= 0 && !enemy.isCollided) {
-              enemy.projectileX = enemy.x + enemy.projectileDirection;
-              enemy.throwingInterval = 60;
-            } else {
-              enemy.throwingInterval--;
+            if (enemy.type === "E") {
+              if (enemy.throwingInterval <= 0 && !enemy.isCollided) {
+                enemy.projectileX = enemy.x + enemy.projectileDirection;
+                enemy.throwingInterval = 60;
+              } else {
+                enemy.throwingInterval--;
+              }
             }
           }
 
