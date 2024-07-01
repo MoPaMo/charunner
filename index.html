@@ -43,11 +43,46 @@
       ];
 
       const enemies = [
-        { x: 40, y: groundLevel, throwingInterval: 60, projectileDirection: -1, projectileX: null, isCollided: false },
-        { x: 60, y: groundLevel, throwingInterval: 70, projectileDirection: -1, projectileX: null, isCollided: false },
-        { x: 90, y: groundLevel - 8, throwingInterval: 80, projectileDirection: -1, projectileX: null, isCollided: false },
-        { x: 160, y: groundLevel - 7, throwingInterval: 65, projectileDirection: -1, projectileX: null, isCollided: false },
-        { x: 210, y: groundLevel - 9, throwingInterval: 75, projectileDirection: -1, projectileX: null, isCollided: false },
+        {
+          x: 40,
+          y: groundLevel,
+          throwingInterval: 60,
+          projectileDirection: -1,
+          projectileX: null,
+          isCollided: false,
+        },
+        {
+          x: 60,
+          y: groundLevel,
+          throwingInterval: 70,
+          projectileDirection: -1,
+          projectileX: null,
+          isCollided: false,
+        },
+        {
+          x: 90,
+          y: groundLevel - 8,
+          throwingInterval: 80,
+          projectileDirection: -1,
+          projectileX: null,
+          isCollided: false,
+        },
+        {
+          x: 160,
+          y: groundLevel - 7,
+          throwingInterval: 65,
+          projectileDirection: -1,
+          projectileX: null,
+          isCollided: false,
+        },
+        {
+          x: 210,
+          y: groundLevel - 9,
+          throwingInterval: 75,
+          projectileDirection: -1,
+          projectileX: null,
+          isCollided: false,
+        },
       ];
 
       const clouds = [
@@ -112,19 +147,21 @@
 
       function drawCloud(cloudX, y, cameraX) {
         const cloud = ["  ___  ", " (   ) ", "(     )", " (___) "];
-        const parallaxFactor = 0.5;
+
+        const parallaxFactor = 0.3; // Adjust this value to change the parallax effect
+
         const adjustedX = Math.floor(cloudX - cameraX * parallaxFactor);
 
         for (let i = 0; i < cloud.length; i++) {
           for (let j = 0; j < cloud[i].length; j++) {
             const x = adjustedX + j;
+
             if (x >= 0 && x < canvasWidth && y + i < canvasHeight) {
               canvas[y + i][x] = cloud[i][j];
             }
           }
         }
       }
-
       function drawPlatforms(cameraX) {
         for (const platform of platforms) {
           for (let x = platform.x; x < platform.x + platform.width; x++) {
@@ -260,16 +297,6 @@
         cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
       }
 
-      function updateClouds() {
-        const cloudSpeed = 0.2;
-        for (let cloud of clouds) {
-          cloud.x -= cloudSpeed;
-          if (cloud.x + 8 < 0) {
-            cloud.x = gameWorldWidth;
-          }
-        }
-      }
-
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(gameWorldWidth - 1, playerX + 1);
@@ -335,7 +362,6 @@
           isJumping = false;
         }
 
-        updateClouds();
         updateCamera();
         renderCanvas(cameraX);
       }
