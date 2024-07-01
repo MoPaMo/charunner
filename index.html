@@ -32,6 +32,9 @@
 
       let cameraX = 0;
 
+      // Add finish line position
+      const finishLineX = 290;
+
       const platforms = [
         { x: 15, y: groundLevel - 4, width: 10 },
         { x: 50, y: groundLevel - 6, width: 15 },
@@ -176,6 +179,15 @@
         }
       }
 
+      // Add function to draw finish line
+      function drawFinishLine(cameraX) {
+        if (finishLineX >= cameraX && finishLineX < cameraX + canvasWidth) {
+          for (let y = 0; y < canvasHeight; y++) {
+            canvas[y][finishLineX - cameraX] = "|";
+          }
+        }
+      }
+
       function renderCanvas(cameraX) {
         for (let y = 0; y < canvasHeight; y++) {
           for (let x = 0; x < canvasWidth; x++) {
@@ -203,6 +215,7 @@
         }
 
         drawPlatforms(cameraX);
+        drawFinishLine(cameraX); // Add this line to draw the finish line
 
         for (const enemy of enemies) {
           if (
@@ -297,6 +310,15 @@
         cameraX = Math.min(cameraX, gameWorldWidth - canvasWidth);
       }
 
+      // Add function to check if player has reached the finish line
+      function checkFinishLine() {
+        if (playerX >= finishLineX) {
+          alert("Congratulations! You've reached the finish line!");
+          playerX = defaultPlayerX;
+          playerY = groundLevel;
+        }
+      }
+
       function gameLoop() {
         if (keysPressed["ArrowRight"]) {
           playerX = Math.min(gameWorldWidth - 1, playerX + 1);
@@ -361,6 +383,8 @@
         if (checkEnemyCollision()) {
           isJumping = false;
         }
+
+        checkFinishLine(); // Add this line to check if player has reached the finish line
 
         updateCamera();
         renderCanvas(cameraX);
